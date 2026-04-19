@@ -1,0 +1,21 @@
+{
+    "name": "get_total_payments_summary",
+    "owner": "salman.dev@gmail.com",
+    "creation": "2025-11-25 18:08:55.369816",
+    "modified": "2025-11-25 18:16:37.171018",
+    "modified_by": "salman.dev@gmail.com",
+    "docstatus": 0,
+    "idx": 0,
+    "script_type": "API",
+    "event_frequency": "All",
+    "doctype_event": "Before Insert",
+    "api_method": "get_total_payments_summary",
+    "allow_guest": 0,
+    "module": "law managment",
+    "disabled": 0,
+    "script": "# Server Script: get_total_payments_summary\r\n# Type: API\r\n\r\ndoctype_name = \"law cases\"\r\n# استخدام الجمع المباشر للنصوص\r\ntable_name = \"`tab\" + doctype_name + \"`\"\r\n\r\n# 1. إعداد الشروط\r\nconditions = [\"docstatus != 2\", \"payments > 0\"]\r\nvalues = {}\r\n\r\n# 2. الفلاتر\r\nif frappe.form_dict.get(\"client\"):\r\n    conditions.append(\"clientid = %(client)s\")\r\n    values[\"client\"] = frappe.form_dict.get(\"client\")\r\n\r\nif frappe.form_dict.get(\"lawyer\"):\r\n    conditions.append(\"clientlawyer = %(lawyer)s\")\r\n    values[\"lawyer\"] = frappe.form_dict.get(\"lawyer\")\r\n\r\nif frappe.form_dict.get(\"from_date\"):\r\n    conditions.append(\"creation >= %(from_date)s\")\r\n    values[\"from_date\"] = frappe.form_dict.get(\"from_date\")\r\n\r\nif frappe.form_dict.get(\"to_date\"):\r\n    conditions.append(\"creation <= %(to_date)s\")\r\n    values[\"to_date\"] = frappe.form_dict.get(\"to_date\")\r\n\r\n# تجميع الشروط\r\nwhere_clause = \" AND \".join(conditions)\r\n\r\n# 3. الاستعلام\r\nquery = \"\"\"\r\n    SELECT\r\n        name as case_id,\r\n        naming_series as file_number,\r\n        clientname as client_name,\r\n        clientid as client_id,\r\n        payments as total_received,\r\n        casefees as total_fees,\r\n        caseoutstanding as outstanding,\r\n        creation as creation_date\r\n    FROM\r\n        %s\r\n    WHERE\r\n        %s\r\n    ORDER BY\r\n        creation DESC\r\n\"\"\" % (table_name, where_clause)\r\n\r\ndata = frappe.db.sql(query, values, as_dict=True)\r\n\r\n# 4. التنسيق النهائي\r\nfinal_result = []\r\nidx = 0\r\nfor row in data:\r\n    # تصحيح الخطأ هنا: استخدام الجمع العادي بدلاً من +=\r\n    idx = idx + 1\r\n    \r\n    c_date = row.get('creation_date')\r\n    date_str = \"\"\r\n    if c_date:\r\n        date_str = str(c_date)\r\n        if len(date_str) > 10:\r\n            date_str = date_str[:10]\r\n\r\n    ordered_row = {\r\n        \"Sr\": idx,\r\n        \"رقم القضية\": row.get('case_id'),\r\n        \"رقم الملف\": row.get('file_number') or \"\",\r\n        \"اسم العميل\": row.get('client_name') or row.get('client_id') or \"\",\r\n        \"إجمالي المستلم\": row.get('total_received') or 0,\r\n        \"قيمة الأتعاب\": row.get('total_fees') or 0,\r\n        \"المتبقي\": row.get('outstanding') or 0,\r\n        \"تاريخ التسجيل\": date_str\r\n    }\r\n    final_result.append(ordered_row)\r\n\r\nfrappe.response['message'] = final_result",
+    "enable_rate_limit": 0,
+    "rate_limit_count": 5,
+    "rate_limit_seconds": 86400,
+    "doctype": "Server Script"
+}

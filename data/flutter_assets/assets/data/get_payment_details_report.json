@@ -1,0 +1,21 @@
+{
+    "name": "get_payment_details_report",
+    "owner": "salman.dev@gmail.com",
+    "creation": "2025-11-25 17:46:56.149720",
+    "modified": "2025-11-25 18:05:14.677038",
+    "modified_by": "salman.dev@gmail.com",
+    "docstatus": 0,
+    "idx": 0,
+    "script_type": "API",
+    "event_frequency": "All",
+    "doctype_event": "Before Insert",
+    "api_method": "get_payments_api",
+    "allow_guest": 0,
+    "module": "law managment",
+    "disabled": 0,
+    "script": "# Server Script: get_payment_details_report\r\n# Type: API\r\n\r\n# تأكد من كتابة \"get_payment_details_report\" في حقل Method Name في إعدادات السكربت\r\n\r\ndoctype_name = \"law cases\"\r\npayment_doctype = \"Law Case Payment\"\r\n\r\nparent_table = f\"`tab{doctype_name}`\"\r\nchild_table = f\"`tab{payment_doctype}`\"\r\n\r\n# إعداد الشروط\r\nconditions = [\"1=1\"]\r\nvalues = {}\r\n\r\n# الفلاتر\r\nclient = frappe.form_dict.get(\"client\")\r\nif client:\r\n    conditions.append(\"parent.clientid = %(client)s\")\r\n    values[\"client\"] = client\r\n\r\ncase_number = frappe.form_dict.get(\"case_number\")\r\nif case_number:\r\n    conditions.append(\"parent.name LIKE %(case_number)s\")\r\n    values[\"case_number\"] = f\"%{case_number}%\"\r\n\r\nfrom_date = frappe.form_dict.get(\"from_date\")\r\nif from_date:\r\n    conditions.append(\"child.date >= %(from_date)s\")\r\n    values[\"from_date\"] = from_date\r\n\r\nto_date = frappe.form_dict.get(\"to_date\")\r\nif to_date:\r\n    conditions.append(\"child.date <= %(to_date)s\")\r\n    values[\"to_date\"] = to_date\r\n\r\nwhere_clause = \" AND \".join(conditions)\r\n\r\n# الاستعلام\r\n# ملاحظة: قمت بإزالة mode_of_payment و reference_no مؤقتاً لضمان عمل الكود\r\n# يمكنك إعادتهم إذا تأكدت من أسمائهم الصحيحة في Law Case Payment\r\nquery = f\"\"\"\r\n    SELECT\r\n        child.name as payment_id,\r\n        parent.name as case_id,\r\n        parent.naming_series as file_number,\r\n        parent.clientname as client_name,\r\n        parent.clientid as client_id,\r\n        child.paymentamount as amount,\r\n        child.date as payment_date,\r\n        emp.employee_name as lawyer_name\r\n    FROM\r\n        {child_table} child\r\n    INNER JOIN\r\n        {parent_table} parent ON child.parent = parent.name\r\n    LEFT JOIN\r\n        `tabEmployee` emp ON parent.clientlawyer = emp.name\r\n    WHERE\r\n        {where_clause}\r\n    ORDER BY\r\n        child.date DESC, parent.name DESC\r\n\"\"\"\r\n\r\ntry:\r\n    data = frappe.db.sql(query, values, as_dict=True)\r\n\r\n    final_result = []\r\n    for index, row in enumerate(data, start=1):\r\n        ordered_row = {\r\n            \"Sr\": index,\r\n            \"رقم القضية\": row.get('case_id'),\r\n            \"رقم الملف\": row.get('file_number') or \"\",\r\n            \"تاريخ الدفع\": row.get('payment_date'),\r\n            \"المبلغ المستلم\": row.get('amount') or 0,\r\n            \"اسم العميل\": row.get('client_name') or row.get('client_id') or \"\",\r\n            \"المحامي المسؤول\": row.get('lawyer_name') or \"\"\r\n        }\r\n        final_result.append(ordered_row)\r\n\r\n    frappe.response['message'] = final_result\r\n\r\nexcept Exception as e:\r\n    frappe.response['error'] = str(e)",
+    "enable_rate_limit": 0,
+    "rate_limit_count": 5,
+    "rate_limit_seconds": 86400,
+    "doctype": "Server Script"
+}

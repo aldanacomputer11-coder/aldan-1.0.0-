@@ -1,0 +1,100 @@
+title: "تقرير العميل المالي"
+subtitle: "كشف حساب تفصيلي للعميلين"
+apiEndpoint: "get_client_financial_report"
+
+filters:
+  - type: "dropdown"
+    name: "client"
+    label: "اسم العميل"
+    options: [] # سيتم ملؤها ديناميكياً إذا لزم الأمر أو تركها نصية
+  - type: "date"
+    name: "from_date"
+    label: "من تاريخ"
+  - type: "date"
+    name: "to_date"
+    label: "إلى تاريخ"
+
+summary:
+  collapsible: true
+  defaultExpanded: true
+  metrics:
+    - field: "fees"
+      label: "إجمالي الأتعاب"
+      color: "#1976D2"
+      format: "currency"
+    - field: "expenses"
+      label: "إجمالي المصاريف"
+      color: "#D32F2F"
+      format: "currency"
+    - field: "received"
+      label: "المبلغ المستلم"
+      color: "#2E7D32"
+      format: "currency"
+    - field: "remaining"
+      label: "المبلغ المتبقي"
+      color: "#EF6C00"
+      format: "currency"
+
+columns:
+  - name: "remaining"
+    label: "المتبقي"
+    width: 100
+    format: "currency"
+    color: "#EF6C00"
+    bold: true
+    textAlign: "left"
+    
+  - name: "fees"
+    label: "الأتعاب"
+    width: 100
+    format: "currency"
+    color: "#1976D2"
+    bold: true
+    textAlign: "left"
+
+  - name: "received"
+    label: "المستلم"
+    width: 100
+    format: "currency"
+    color: "#2E7D32"
+    bold: true
+    textAlign: "left"
+
+  - name: "expenses"
+    label: "المصاريف"
+    width: 100
+    format: "currency"
+    color: "#D32F2F"
+    bold: true
+    textAlign: "left"
+
+  - name: "clientName"
+    label: "اسم العميل"
+    width: 180
+    textAlign: "right"
+
+  - name: "lawyerName"
+    label: "اسم المحامي"
+    width: 150
+    textAlign: "right"
+
+  - name: "caseNumber"
+    label: "رقم القضية"
+    width: 120
+    textAlign: "center"
+
+  - name: "dateReceived"
+    label: "تاريخ الورود"
+    width: 120
+    format: "date"
+    textAlign: "center"
+
+pager:
+  rowsPerPage: 20
+  enabled: true
+
+export:
+  pdf: true
+  excel: true
+  print: true
+  companyName: "مكتب المحاماة الذكي"

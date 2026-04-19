@@ -1,0 +1,22 @@
+{
+    "name": "get_lawyer_financial_report",
+    "owner": "salman.dev@gmail.com",
+    "creation": "2025-11-25 11:25:25.459090",
+    "modified": "2025-11-25 13:03:39.801457",
+    "modified_by": "salman.dev@gmail.com",
+    "docstatus": 0,
+    "idx": 0,
+    "script_type": "API",
+    "reference_doctype": "law cases",
+    "event_frequency": "All",
+    "doctype_event": "Before Insert",
+    "api_method": "get_lawyer_financial_report",
+    "allow_guest": 0,
+    "module": "law managment",
+    "disabled": 0,
+    "script": "# Server Script: get_lawyer_financial_report\r\n# Type: API\r\n\r\ndoctype_name = \"law cases\"\r\ntable_name = f\"`tab{doctype_name}`\"\r\n\r\n# 1. إعداد الشروط الأساسية\r\n# نستبعد القضايا التي ليس لها محامي إذا أردت، أو اتركها كما هي\r\nconditions = [\"1=1\"] \r\nvalues = {}\r\n\r\n# 2. استقبال الفلاتر من الرابط (Query Parameters)\r\n\r\n# فلتر اسم المحامي (lawyername)\r\nlawyer = frappe.form_dict.get(\"lawyername\")\r\nif lawyer:\r\n    conditions.append(\"lc.clientlawyer = %(lawyer)s\")\r\n    values[\"lawyer\"] = lawyer\r\n\r\n# فلتر من تاريخ (from_date)\r\nfrom_date = frappe.form_dict.get(\"from_date\")\r\nif from_date:\r\n    conditions.append(\"lc.importdate >= %(from_date)s\")\r\n    values[\"from_date\"] = from_date\r\n\r\n# فلتر إلى تاريخ (to_date)\r\nto_date = frappe.form_dict.get(\"to_date\")\r\nif to_date:\r\n    conditions.append(\"lc.importdate <= %(to_date)s\")\r\n    values[\"to_date\"] = to_date\r\n\r\n# 3. تجميع الشروط\r\nwhere_clause = \" AND \".join(conditions)\r\n\r\n# 4. بناء الاستعلام\r\n# ملاحظة: نستخدم clientname لجلب اسم العميل (أو clientid إذا كان الاسم محفوظاً هناك)\r\n# ونستخدم employee_name للمحامي\r\nquery = f\"\"\"\r\n    SELECT\r\n        lc.name as ID,\r\n        lc.docstatus,\r\n        lc.casenum as 'رقم القضية',\r\n        lc.importdate as 'تاريخ ورودها للمكتب',\r\n        lc.clientname as 'اسم العميل', \r\n        emp.employee_name as 'اسم المحامي',\r\n        lc.casefees as 'الاتعاب',\r\n        lc.expenses as 'المصاريف',\r\n        lc.caseoutstanding as 'المتبقي',\r\n        lc.payments as 'المستلم'\r\n    FROM\r\n        {table_name} lc\r\n    LEFT JOIN\r\n        `tabEmployee` emp ON lc.clientlawyer = emp.name\r\n    WHERE\r\n        {where_clause}\r\n    ORDER BY\r\n        lc.importdate DESC, lc.name DESC\r\n\"\"\"\r\n\r\ndata = frappe.db.sql(query, values, as_dict=True)\r\n\r\n# 5. إضافة عمود التسلسل (Sr) يدوياً\r\nfinal_result = []\r\nfor index, row in enumerate(data, start=1):\r\n    # تحويل القيم الـ NULL إلى 0 أو نص فارغ لضمان تناسق العرض\r\n    row['Sr'] = index\r\n    # ترتيب الأعمدة كما في الطلب\r\n    ordered_row = {\r\n        \"Sr\": row['Sr'],\r\n        \"ID\": row['ID'],\r\n        \"docstatus\": row['docstatus'],\r\n        \"رقم القضية\": row['رقم القضية'] or \"\",\r\n        \"تاريخ ورودها للمكتب\": row['تاريخ ورودها للمكتب'],\r\n        \"اسم العميل\": row['اسم العميل'] or \"\",\r\n        \"اسم المحامي\": row['اسم المحامي'] or \"\",\r\n        \"الاتعاب\": row['الاتعاب'] or 0,\r\n        \"المصاريف\": row['المصاريف'] or 0,\r\n        \"المتبقي\": row['المتبقي'] or 0,\r\n        \"المستلم\": row['المستلم'] or 0\r\n    }\r\n    final_result.append(ordered_row)\r\n\r\nfrappe.response['message'] = final_result",
+    "enable_rate_limit": 0,
+    "rate_limit_count": 5,
+    "rate_limit_seconds": 86400,
+    "doctype": "Server Script"
+}

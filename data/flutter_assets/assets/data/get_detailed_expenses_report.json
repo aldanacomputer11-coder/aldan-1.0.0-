@@ -1,0 +1,21 @@
+{
+    "name": "get_detailed_expenses_report",
+    "owner": "salman.dev@gmail.com",
+    "creation": "2025-11-25 13:08:41.423394",
+    "modified": "2025-11-25 13:17:40.897449",
+    "modified_by": "salman.dev@gmail.com",
+    "docstatus": 0,
+    "idx": 0,
+    "script_type": "API",
+    "event_frequency": "All",
+    "doctype_event": "Before Insert",
+    "api_method": "get_detailed_expenses_report",
+    "allow_guest": 0,
+    "module": "law managment",
+    "disabled": 0,
+    "script": "# Server Script: get_detailed_expenses_report\r\n# Type: API\r\n\r\n# أسماء الجداول\r\nparent_doctype = \"law cases\"\r\nchild_doctype = \"Law Case Expenses\"\r\n\r\nparent_table = f\"`tab{parent_doctype}`\"\r\nchild_table = f\"`tab{child_doctype}`\"\r\n\r\n# 1. إعداد الشروط\r\nconditions = [\"1=1\"]\r\nvalues = {}\r\n\r\n# 2. الفلاتر\r\n\r\n# فلتر العميل (client)\r\nclient = frappe.form_dict.get(\"client\")\r\nif client:\r\n    conditions.append(\"parent.clientid = %(client)s\")\r\n    values[\"client\"] = client\r\n\r\n# فلتر رقم القضية (case_number)\r\ncase_number = frappe.form_dict.get(\"case_number\")\r\nif case_number:\r\n    conditions.append(\"parent.name LIKE %(case_number)s\")\r\n    values[\"case_number\"] = f\"%{case_number}%\"\r\n\r\n# فلتر من تاريخ المصروف (from_date)\r\nfrom_date = frappe.form_dict.get(\"from_date\")\r\nif from_date:\r\n    conditions.append(\"child.expensedate >= %(from_date)s\")\r\n    values[\"from_date\"] = from_date\r\n\r\n# فلتر إلى تاريخ المصروف (to_date)\r\nto_date = frappe.form_dict.get(\"to_date\")\r\nif to_date:\r\n    conditions.append(\"child.expensedate <= %(to_date)s\")\r\n    values[\"to_date\"] = to_date\r\n\r\n# تجميع شرط WHERE\r\nwhere_clause = \" AND \".join(conditions)\r\n\r\n# 3. الاستعلام\r\n# نقوم بعمل JOIN بين الجدول الأب (القضايا) والجدول الابن (المصاريف)\r\n# الحقل parent في الجدول الابن يربطه بالجدول الأب\r\nquery = f\"\"\"\r\n    SELECT\r\n        child.name as expense_id,\r\n        parent.name as case_id,\r\n        parent.naming_series as file_number,\r\n        parent.clientname as client_name,\r\n        parent.clientid as client_id,\r\n        child.expenseamount as amount,\r\n        child.expensedate as expense_date,\r\n        child.notes as expense_notes\r\n    FROM\r\n        {child_table} child\r\n    INNER JOIN\r\n        {parent_table} parent ON child.parent = parent.name\r\n    WHERE\r\n        {where_clause}\r\n    ORDER BY\r\n        child.expensedate DESC, parent.name DESC\r\n\"\"\"\r\n\r\ndata = frappe.db.sql(query, values, as_dict=True)\r\n\r\n# 4. التنسيق النهائي\r\nfinal_result = []\r\nfor index, row in enumerate(data, start=1):\r\n    ordered_row = {\r\n        \"Sr\": index,\r\n        \"رقم القضية\": row['case_id'],       # ID القضية (name)\r\n        \"رقم الملف\": row['file_number'] or \"\", # naming_series\r\n        \"تاريخ المصروف\": row['expense_date'],\r\n        \"المبلغ\": row['amount'] or 0,\r\n        \"اسم العميل\": row['client_name'] or row['client_id'] or \"\",\r\n        \"ملاحظات\": row['expense_notes'] or \"\"\r\n    }\r\n    final_result.append(ordered_row)\r\n\r\nfrappe.response['message'] = final_result",
+    "enable_rate_limit": 0,
+    "rate_limit_count": 5,
+    "rate_limit_seconds": 86400,
+    "doctype": "Server Script"
+}
