@@ -1,0 +1,39 @@
+# MSIX Conversion Accelerator
+
+PackageName: الدانة لإدارة القضايا القانونية
+
+PublisherName: الدانة للمحاماة
+
+PackageVersion: 1.1.4.0
+
+EligibleForConversion: Yes
+
+ConversionStatus: Package Created. Need Validation
+
+RemediationApproach:
+- SequenceNumber: 1
+  Issue:
+    Description: Capabilities Required
+  Fix:
+    FixType: Capability
+    FixDetails:
+      Capabilities:
+      - Name: internetClient
+        ApplicationIds:
+        - '*'
+      - Name: privateNetworkClientServer
+        ApplicationIds:
+        - '*'
+
+Edition: Microsoft Windows 11 Home
+
+MinimumOSVersion: 25H2
+
+MinimumOSBuild: 26200.8246
+
+Architecture: 64
+
+MSIXConversionToolVersion: 1.2024.405.0
+
+AcceleratorVersion: 1.0.0
+
